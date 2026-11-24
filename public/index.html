@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RENTORA – Smart Property Rental Marketplace</title>
+  <meta name="description" content="RENTORA connects property owners and landlords with tenants seeking rental houses, flats, apartments, and villas with zero brokerage hassle." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS for Interactive Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <!-- Rentora Stylesheets -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/dashboards.css" />
+  <link rel="stylesheet" href="/css/map.css" />
+</head>
+<body>
+
+  <!-- ========================================================================
+       DEMO CREDENTIALS STRIP (Instant 1-Click Evaluation Bar)
+       ======================================================================== -->
+  <div class="demo-accounts-bar">
+    <div class="container demo-bar-inner">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--coral-500); font-weight:800;">⚡ 1-Click Test Logins:</span>
+        <span style="font-size:0.75rem; color:#94A3B8;">Instantly switch account roles to test all platform features</span>
+      </div>
+      <div class="demo-chips">
+        <button class="demo-chip-btn" onclick="window.triggerDemoLogin('customer')">
+          👤 Demo Tenant (Customer)
+        </button>
+        <button class="demo-chip-btn" onclick="window.triggerDemoLogin('seller')">
+          ⭐ Rajesh (Pro Landlord)
+        </button>
+        <button class="demo-chip-btn" onclick="window.triggerDemoLogin('landlord')">
+          👑 Pooja (Premium Partner)
+        </button>
+        <button class="demo-chip-btn" style="background:rgba(239,68,68,0.25); border-color:#EF4444;" onclick="window.triggerDemoLogin('admin')">
+          🛡️ Admin Console
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       STICKY NAVIGATION BAR
+       ======================================================================== -->
+  <header class="site-header" id="siteHeader">
+    <div class="container nav-wrapper">
+      <!-- Brand Logo -->
+      <a href="#/" class="brand-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>RENTORA</span>
+        <span class="brand-tag">SMART</span>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#/" class="nav-link active">Properties</a></li>
+          <li><a href="#howItWorksSection" class="nav-link">How it Works</a></li>
+          <li><a href="#pricingSection" class="nav-link">Landlord Plans</a></li>
+        </ul>
+      </nav>
+
+      <!-- Action Buttons & User Section -->
+      <div class="nav-actions">
+        <button class="btn btn-primary btn-sm" onclick="window.openAddPropertyModal()">
+          + Post Property
+        </button>
+        <div id="navUserSection" style="display:flex; align-items:center;">
+          <!-- Dynamically populated by auth.js -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       DYNAMIC DASHBOARD VIEW (Rendered for Customer, Seller, or Admin)
+       ======================================================================== -->
+  <div id="dashboardViewContent" style="display:none;"></div>
+
+  <!-- ========================================================================
+       HERO SEARCH SECTION
+       ======================================================================== -->
+  <section class="hero-section" id="heroSection">
+    <div class="hero-backdrop-pattern"></div>
+    <div class="hero-glow-orb"></div>
+
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-pill-badge">
+          <span class="pulse-dot"></span>
+          <span>Verified Direct Landlord Marketplace • Zero Brokerage</span>
+        </div>
+        <h1 class="hero-title">
+          Find Your Perfect <span class="text-gradient">Rental Home</span>
+        </h1>
+        <p class="hero-subtitle">
+          Discover verified rental houses, flats, apartments, and villas directly from landlords with map-based distance discovery and smart budget filtering.
+        </p>
+      </div>
+
+      <!-- Master Search Console -->
+      <div class="search-console-container">
+        <div class="search-console-box">
+          <form id="heroSearchForm">
+            <div class="search-console-grid">
+              <!-- Location Input -->
+              <div class="search-field-group">
+                <span class="search-field-label">Location / City / Locality</span>
+                <div class="search-input-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <input type="text" id="heroLocationInput" class="search-input-field" placeholder="Enter City, Area, or Tanakpur..." autocomplete="off" />
+                </div>
+              </div>
+
+              <!-- BHK Config -->
+              <div class="search-field-group">
+                <span class="search-field-label">BHK Config</span>
+                <select id="heroBhkSelect" class="search-select-field">
+                  <option value="">Any BHK</option>
+                  <option value="1 BHK">1 BHK</option>
+                  <option value="2 BHK">2 BHK</option>
+                  <option value="3 BHK">3 BHK</option>
+                  <option value="4 BHK">4 BHK</option>
+                  <option value="5+ BHK">5+ BHK</option>
+                </select>
+              </div>
+
+              <!-- Property Type -->
+              <div class="search-field-group">
+                <span class="search-field-label">Property Type</span>
+                <select id="heroTypeSelect" class="search-select-field">
+                  <option value="">All Types</option>
+                  <option value="House">Independent House</option>
+                  <option value="Flat">Flat / Apartment</option>
+                  <option value="Villa">Luxury Villa</option>
+                  <option value="Independent Floor">Builder Floor</option>
+                </select>
+              </div>
+
+              <!-- Monthly Budget -->
+              <div class="search-field-group">
+                <span class="search-field-label">Monthly Rent</span>
+                <select id="heroBudgetSelect" class="search-select-field">
+                  <option value="">Any Budget</option>
+                  <option value="0-10000">Under ₹10,000</option>
+                  <option value="10000-20000">₹10,000 - ₹20,000</option>
+                  <option value="20000-35000">₹20,000 - ₹35,000</option>
+                  <option value="35000-100000">₹35,000+</option>
+                </select>
+              </div>
+
+              <!-- Submit -->
+              <button type="submit" class="search-submit-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <span>Search</span>
+              </button>
+            </div>
+
+            <!-- Search Radius Strip -->
+            <div class="search-options-strip">
+              <div class="radius-selector-wrap">
+                <span style="font-weight:700; color:var(--navy-900);">Search Radius:</span>
+                <button type="button" class="radius-pill-btn" data-radius="2">2 km</button>
+                <button type="button" class="radius-pill-btn" data-radius="5">5 km</button>
+                <button type="button" class="radius-pill-btn" data-radius="10">10 km</button>
+                <button type="button" class="radius-pill-btn active" data-radius="20">20 km</button>
+                <button type="button" class="radius-pill-btn" data-radius="50">50 km</button>
+              </div>
+              <div style="font-size:0.8rem; color:var(--text-muted);">
+                Smart Geospatial Distance Radius Active
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Popular City Quick Chips -->
+        <div class="popular-locations-strip">
+          <span class="popular-label">Popular Locations:</span>
+          <button class="location-chip" data-location="Tanakpur">📍 Tanakpur (Uttarakhand)</button>
+          <button class="location-chip" data-location="Banbasa">📍 Banbasa</button>
+          <button class="location-chip" data-location="Dehradun">📍 Dehradun</button>
+          <button class="location-chip" data-location="Haldwani">📍 Haldwani</button>
+          <button class="location-chip" data-location="Delhi">📍 Delhi NCR</button>
+          <button class="location-chip" data-location="Bangalore">📍 Bangalore</button>
+          <button class="location-chip" data-location="Noida">📍 Noida Sector 62</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       MAIN MARKETPLACE DISCOVERY SECTION
+       ======================================================================== -->
+  <main class="container" id="mainMarketplaceView">
+    <section id="marketplaceSection" style="padding-top:20px;">
+      <!-- View Mode & Sort Controls Bar -->
+      <div class="view-mode-bar">
+        <div>
+          <h2 class="results-count-title" id="resultsCount">Showing available rental homes</h2>
+        </div>
+
+        <div class="view-controls">
+          <!-- Sorting Selector -->
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label for="propertySortSelect" style="font-size:0.85rem; font-weight:700; color:var(--text-secondary);">Sort By:</label>
+            <select id="propertySortSelect" class="form-control" style="padding:6px 12px; font-size:0.85rem; width:auto; border-radius:var(--radius-sm);">
+              <option value="smart">⭐ Sponsored & Lowest Price (Default)</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="nearest">Nearest First</option>
+              <option value="newest">Newest First</option>
+            </select>
+          </div>
+
+          <!-- Split Map Toggle -->
+          <div class="toggle-group">
+            <button class="toggle-btn view-toggle-btn active" data-mode="grid">
+              ▦ Cards Grid
+            </button>
+            <button class="toggle-btn view-toggle-btn" data-mode="split">
+              🗺️ Split Map
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marketplace Layout: Filter Sidebar + Properties Grid + Map Pane -->
+      <div class="marketplace-layout" id="marketplaceLayout">
+        <!-- Advanced Filter Sidebar -->
+        <aside class="filter-sidebar">
+          <div class="filter-header">
+            <h3 class="filter-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+              </svg>
+              <span>Filters</span>
+            </h3>
+            <button class="reset-filters-btn" id="resetFiltersBtn">Reset All</button>
+          </div>
+
+          <!-- Property Type -->
+          <div class="filter-section">
+            <div class="filter-group-title">Property Type</div>
+            <div class="pill-group" id="propertyTypePills">
+              <button class="filter-pill active" data-type="All">All</button>
+              <button class="filter-pill" data-type="House">House</button>
+              <button class="filter-pill" data-type="Flat">Flat</button>
+              <button class="filter-pill" data-type="Apartment">Apartment</button>
+              <button class="filter-pill" data-type="Villa">Villa</button>
+              <button class="filter-pill" data-type="Independent Floor">Floor</button>
+            </div>
+          </div>
+
+          <!-- BHK Filter -->
+          <div class="filter-section">
+            <div class="filter-group-title">BHK Configuration</div>
+            <div class="pill-group" id="bhkFilterPills">
+              <button class="filter-pill active" data-bhk="All">Any</button>
+              <button class="filter-pill" data-bhk="1 BHK">1 BHK</button>
+              <button class="filter-pill" data-bhk="2 BHK">2 BHK</button>
+              <button class="filter-pill" data-bhk="3 BHK">3 BHK</button>
+              <button class="filter-pill" data-bhk="4 BHK">4 BHK</button>
+            </div>
+          </div>
+
+          <!-- Monthly Budget Slider -->
+          <div class="filter-section">
+            <div class="filter-group-title">
+              <span>Max Monthly Rent</span>
+              <span id="rentSliderValue" style="color:var(--coral-500); font-weight:800;">₹1,00,000+</span>
+            </div>
+            <div class="range-slider-wrap">
+              <input type="range" id="sidebarRentSlider" class="slider-track" min="5000" max="100000" step="2500" value="100000" />
+              <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted);">
+                <span>₹5,000</span>
+                <span>₹50,000</span>
+                <span>₹1,00,000+</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Furnishing Status -->
+          <div class="filter-section">
+            <div class="filter-group-title">Furnishing</div>
+            <div class="checkbox-list">
+              <label class="checkbox-item">
+                <input type="checkbox" name="furnishing" value="Fully Furnished" />
+                <span>Fully Furnished</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="furnishing" value="Semi Furnished" />
+                <span>Semi Furnished</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="furnishing" value="Unfurnished" />
+                <span>Unfurnished</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Preferred Tenant -->
+          <div class="filter-section">
+            <div class="filter-group-title">Preferred Tenant</div>
+            <select id="preferredTenantSelect" class="form-control" style="font-size:0.85rem;">
+              <option value="Anyone">Anyone</option>
+              <option value="Family">Family Only</option>
+              <option value="Bachelor">Bachelors</option>
+              <option value="Students">Students</option>
+            </select>
+          </div>
+
+          <!-- Amenities Checklist -->
+          <div class="filter-section">
+            <div class="filter-group-title">Key Amenities</div>
+            <div class="checkbox-list">
+              <label class="checkbox-item">
+                <input type="checkbox" name="amenity" value="Lift" />
+                <span>Elevator / Lift</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="amenity" value="Power Backup" />
+                <span>Power Backup</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="amenity" value="Security" />
+                <span>24x7 Security</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="amenity" value="Water Supply" />
+                <span>24x7 Water Supply</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="amenity" value="Gym" />
+                <span>Fitness Gym</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="amenity" value="Swimming Pool" />
+                <span>Swimming Pool</span>
+              </label>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Center Properties Grid -->
+        <section class="properties-grid" id="propertiesGrid">
+          <!-- Populated by JavaScript -->
+        </section>
+
+        <!-- Right Side Leaflet Map Split Pane -->
+        <aside class="map-pane-container" id="mapPaneContainer" style="display:none;">
+          <div id="leafletMap"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================================================
+       HOW RENTORA WORKS SECTION
+       ======================================================================== -->
+  <section id="howItWorksSection" style="background:#FFFFFF; padding:80px 0; border-top:1px solid var(--border-light); border-bottom:1px solid var(--border-light);">
+    <div class="container">
+      <div style="text-align:center; max-width:700px; margin:0 auto 50px;">
+        <span class="badge badge-navy" style="margin-bottom:12px;">SIMPLIFIED RENTING</span>
+        <h2 style="font-size:2.4rem; font-weight:800; color:var(--navy-900);">How RENTORA Works</h2>
+        <p style="color:var(--text-secondary); font-size:1.05rem;">From discovering verified rental houses to key handover in 3 simple steps.</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:32px;">
+        <!-- Step 1 -->
+        <div style="background:var(--navy-50); padding:32px 28px; border-radius:var(--radius-xl); text-align:center; border:1px solid var(--border-light);">
+          <div style="width:64px; height:64px; border-radius:50%; background:var(--coral-500); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:800; margin:0 auto 20px;">
+            1
+          </div>
+          <h3 style="font-size:1.3rem; margin-bottom:10px;">Search by Location & Radius</h3>
+          <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.6;">
+            Enter your desired town, locality, or PIN code (e.g., Tanakpur, Dehradun, Delhi). Adjust radius from 2 km to 50 km to find nearby homes.
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="background:var(--navy-50); padding:32px 28px; border-radius:var(--radius-xl); text-align:center; border:1px solid var(--border-light);">
+          <div style="width:64px; height:64px; border-radius:50%; background:var(--navy-900); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:800; margin:0 auto 20px;">
+            2
+          </div>
+          <h3 style="font-size:1.3rem; margin-bottom:10px;">Inspect Details & Schedule Tour</h3>
+          <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.6;">
+            Review high-res photos, verified specs, amenities, and security deposits. Book an in-person or virtual video tour with one click.
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="background:var(--navy-50); padding:32px 28px; border-radius:var(--radius-xl); text-align:center; border:1px solid var(--border-light);">
+          <div style="width:64px; height:64px; border-radius:50%; background:var(--teal-600); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:1.6rem; font-weight:800; margin:0 auto 20px;">
+            3
+          </div>
+          <h3 style="font-size:1.3rem; margin-bottom:10px;">Connect Direct with Landlords</h3>
+          <p style="color:var(--text-secondary); font-size:0.92rem; line-height:1.6;">
+            Send rental enquiries, chat on WhatsApp, or call directly. Enjoy transparent rent terms with 0% middleman brokerage fees.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       LANDLORD SUBSCRIPTION PRICING PLANS
+       ======================================================================== -->
+  <section class="pricing-section container" id="pricingSection">
+    <div class="pricing-header">
+      <span class="badge badge-sponsored" style="margin-bottom:12px;">MONETIZATION & SELLER PLANS</span>
+      <h2>Landlord Subscription & Sponsored Ads</h2>
+      <p style="color:var(--text-secondary);">Supercharge your property visibility, receive priority tenant inquiries, and get verified badge credibility.</p>
+    </div>
+
+    <div class="pricing-cards-grid">
+      <!-- Free Starter -->
+      <div class="pricing-card">
+        <div class="pricing-plan-name">Free Starter</div>
+        <div class="pricing-plan-price">₹0 <span class="period">/month</span></div>
+        <div class="pricing-plan-desc">Standard plan for homeowners renting out 1 or 2 residential properties.</div>
+        <ul class="pricing-features-list">
+          <li class="pricing-feature-item">✓ 2 Active Property Listings</li>
+          <li class="pricing-feature-item">✓ Standard Search Visibility</li>
+          <li class="pricing-feature-item">✓ Customer Enquiries Inbox</li>
+          <li class="pricing-feature-item">✓ Standard Visit Scheduling</li>
+          <li class="pricing-feature-item">✓ Basic Listing Views Counter</li>
+        </ul>
+        <button class="btn btn-outline" onclick="window.triggerDemoLogin('seller')">
+          Get Started Free
+        </button>
+      </div>
+
+      <!-- Pro Landlord -->
+      <div class="pricing-card is-popular">
+        <div class="popular-ribbon">Most Popular</div>
+        <div class="pricing-plan-name">Pro Landlord</div>
+        <div class="pricing-plan-price">₹999 <span class="period">/month</span></div>
+        <div class="pricing-plan-desc">For serious property owners seeking fast occupancy and verified landlord badges.</div>
+        <ul class="pricing-features-list">
+          <li class="pricing-feature-item">✓ <strong>10 Active Property Listings</strong></li>
+          <li class="pricing-feature-item">✓ <strong>2 Sponsored Ad Slots Included</strong></li>
+          <li class="pricing-feature-item">✓ <strong>Verified Landlord Badge</strong></li>
+          <li class="pricing-feature-item">✓ 3x Higher Search Visibility</li>
+          <li class="pricing-feature-item">✓ Priority Customer Enquiries</li>
+          <li class="pricing-feature-item">✓ Advanced View & Lead Analytics</li>
+        </ul>
+        <button class="btn btn-primary" onclick="window.startRazorpayCheckout('pro', 999)">
+          Subscribe Pro (₹999)
+        </button>
+      </div>
+
+      <!-- Premium Enterprise -->
+      <div class="pricing-card">
+        <div class="pricing-plan-name">Premium Enterprise</div>
+        <div class="pricing-plan-price">₹2,499 <span class="period">/month</span></div>
+        <div class="pricing-plan-desc">Maximum visibility for real estate agencies and multi-property landlords.</div>
+        <ul class="pricing-features-list">
+          <li class="pricing-feature-item">✓ <strong>Unlimited Active Listings</strong></li>
+          <li class="pricing-feature-item">✓ <strong>6 Sponsored Ad Slots Included</strong></li>
+          <li class="pricing-feature-item">✓ <strong>Exclusive Gold Partner Badge</strong></li>
+          <li class="pricing-feature-item">✓ Top Placement in Search Results</li>
+          <li class="pricing-feature-item">✓ Instant SMS & WhatsApp Tenant Alerts</li>
+          <li class="pricing-feature-item">✓ Dedicated Account Manager</li>
+        </ul>
+        <button class="btn btn-navy" onclick="window.startRazorpayCheckout('premium', 2499)">
+          Subscribe Premium (₹2,499)
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       FOOTER
+       ======================================================================== -->
+  <footer style="background:var(--navy-950); color:#94A3B8; padding:60px 0 30px; border-top:1px solid rgba(255,255,255,0.08);">
+    <div class="container">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:40px; margin-bottom:50px;">
+        <div>
+          <div class="brand-logo" style="color:#FFFFFF; margin-bottom:14px;">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>RENTORA</span>
+          </div>
+          <p style="font-size:0.9rem; line-height:1.6; color:#94A3B8;">
+            India's modern smart rental property marketplace. Empowering landlords to list and tenants to discover homes with verified security and zero brokerage.
+          </p>
+        </div>
+
+        <div>
+          <h4 style="color:#FFFFFF; font-size:1rem; margin-bottom:16px;">Rental Hubs</h4>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:8px; font-size:0.9rem;">
+            <li><a href="#/" class="location-chip" data-location="Tanakpur" style="background:transparent; border:none; padding:0; color:#94A3B8;">Tanakpur Rentals</a></li>
+            <li><a href="#/" class="location-chip" data-location="Dehradun" style="background:transparent; border:none; padding:0; color:#94A3B8;">Dehradun Hill Homes</a></li>
+            <li><a href="#/" class="location-chip" data-location="Delhi" style="background:transparent; border:none; padding:0; color:#94A3B8;">Delhi NCR Flats</a></li>
+            <li><a href="#/" class="location-chip" data-location="Bangalore" style="background:transparent; border:none; padding:0; color:#94A3B8;">Bangalore Tech Hubs</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 style="color:#FFFFFF; font-size:1rem; margin-bottom:16px;">For Landlords</h4>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:8px; font-size:0.9rem;">
+            <li><a href="#/seller/dashboard" style="color:#94A3B8;">Seller Dashboard</a></li>
+            <li><a href="javascript:void(0)" onclick="window.openAddPropertyModal()" style="color:#94A3B8;">+ Post New Listing</a></li>
+            <li><a href="#pricingSection" style="color:#94A3B8;">Subscription & Promotion</a></li>
+            <li><a href="javascript:void(0)" onclick="window.triggerDemoLogin('seller')" style="color:#94A3B8;">Pro Landlord Demo</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 style="color:#FFFFFF; font-size:1rem; margin-bottom:16px;">Trust & Legal</h4>
+          <ul style="list-style:none; display:flex; flex-direction:column; gap:8px; font-size:0.9rem;">
+            <li><span style="color:#94A3B8;">Direct Landlord Verification</span></li>
+            <li><span style="color:#94A3B8;">No Hidden Brokerage</span></li>
+            <li><span style="color:#94A3B8;">Standard Rental Agreements</span></li>
+            <li><a href="#/admin" style="color:var(--coral-500); font-weight:600;">Super Admin Access</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:24px; text-align:center; font-size:0.85rem;">
+        &copy; 2026 RENTORA Smart Rental Marketplace. All rights reserved. Built with Node.js, Express, MongoDB, and Leaflet Maps.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================================================
+       MODALS
+       ======================================================================== -->
+
+  <!-- 1. AUTH MODAL (Login & Register) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display:flex; gap:16px;">
+          <button id="authTabLogin" class="btn btn-ghost" style="font-weight:800; font-size:1.1rem; padding:0; color:var(--navy-900);" onclick="window.openAuthModal('login')">
+            Sign In
+          </button>
+          <span style="color:var(--border-medium);">|</span>
+          <button id="authTabRegister" class="btn btn-ghost" style="font-weight:800; font-size:1.1rem; padding:0; color:var(--text-muted);" onclick="window.openAuthModal('register')">
+            Create Account
+          </button>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Sign In Pane -->
+        <div id="loginPane">
+          <form id="loginForm">
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="loginEmail" class="form-control" placeholder="name@example.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Account Role</label>
+              <select id="loginRoleSelect" class="form-control">
+                <option value="customer">Customer (Tenant)</option>
+                <option value="seller">Seller (Property Owner / Landlord)</option>
+                <option value="admin">Platform Administrator</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:1rem;">
+              Sign In to Rentora
+            </button>
+          </form>
+        </div>
+
+        <!-- Register Pane -->
+        <div id="registerPane" style="display:none;">
+          <form id="registerForm">
+            <div class="form-group">
+              <label class="form-label">I want to register as:</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <label style="display:flex; align-items:center; gap:8px; padding:10px; background:var(--navy-50); border-radius:var(--radius-md); cursor:pointer;">
+                  <input type="radio" name="regRole" value="customer" checked />
+                  <strong>Customer (Tenant)</strong>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; padding:10px; background:var(--navy-50); border-radius:var(--radius-md); cursor:pointer;">
+                  <input type="radio" name="regRole" value="seller" />
+                  <strong>Seller (Landlord)</strong>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="regName" class="form-control" placeholder="Rajesh Sharma" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="regEmail" class="form-control" placeholder="rajesh@example.com" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password (Min 6 chars)</label>
+              <input type="password" id="regPassword" class="form-control" placeholder="••••••••" minlength="6" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mobile Phone Number</label>
+              <input type="text" id="regPhone" class="form-control" placeholder="+91 98765 43210" required />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-size:1rem;">
+              Create My Account
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. PROPERTY DETAILS MODAL -->
+  <div class="modal-overlay" id="propertyDetailModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Property Specifications</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="propertyDetailContent">
+        <!-- Rendered dynamically by properties.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. CONTACT OWNER MODAL -->
+  <div class="modal-overlay" id="contactOwnerModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Contact Property Landlord</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="contactOwnerDetails">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. SEND ENQUIRY MODAL -->
+  <div class="modal-overlay" id="enquiryModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Send Rental Enquiry</h3>
+          <p id="enquiryPropertyTitle" style="font-size:0.85rem; color:var(--text-secondary);"></p>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="enquiryForm">
+        <div class="modal-body">
+          <input type="hidden" id="enquiryPropertyId" />
+          <div class="form-group">
+            <label class="form-label">Your Name</label>
+            <input type="text" id="enquiryName" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Phone</label>
+            <input type="text" id="enquiryPhone" class="form-control" placeholder="+91 XXXXX XXXXX" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="enquiryEmail" class="form-control" required />
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Preferred Move-in Date</label>
+              <input type="date" id="enquiryMoveIn" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tenant Profile</label>
+              <select id="enquiryTenantType" class="form-control">
+                <option value="Family">Family</option>
+                <option value="Working Professional">Working Professional</option>
+                <option value="Bachelor">Bachelor</option>
+                <option value="Student">Student</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Number of Occupants</label>
+            <input type="number" id="enquiryOccupants" class="form-control" min="1" max="10" value="2" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Message to Landlord</label>
+            <textarea id="enquiryMessage" class="form-control" rows="3" placeholder="Tell the landlord about your employment, family, or specific requirements..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Rental Enquiry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. SCHEDULE VISIT MODAL -->
+  <div class="modal-overlay" id="visitModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Schedule Property Tour</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="visitForm">
+        <div class="modal-body">
+          <input type="hidden" id="visitPropertyId" />
+          <div class="form-group">
+            <label class="form-label">Visit Type</label>
+            <select id="visitTypeSelect" class="form-control">
+              <option value="In-Person">In-Person Property Walkthrough</option>
+              <option value="Virtual Video Tour">Live WhatsApp / Video Tour</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Select Date</label>
+            <input type="date" id="visitDate" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Preferred Time Slot</label>
+            <select id="visitTimeSlot" class="form-control">
+              <option value="10:00 AM - 12:00 PM">Morning (10:00 AM - 12:00 PM)</option>
+              <option value="12:00 PM - 02:00 PM">Afternoon (12:00 PM - 02:00 PM)</option>
+              <option value="02:00 PM - 04:00 PM">Mid-day (02:00 PM - 04:00 PM)</option>
+              <option value="04:00 PM - 06:00 PM">Evening (04:00 PM - 06:00 PM)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes for Landlord (Optional)</label>
+            <textarea id="visitNotes" class="form-control" rows="2" placeholder="e.g. Coming with family, will arrive by car..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Request Appointment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. ADD PROPERTY MODAL (Landlords) -->
+  <div class="modal-overlay" id="addPropertyModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">List a New Rental Property</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="addPropertyForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Property Title</label>
+            <input type="text" id="propTitle" class="form-control" placeholder="e.g. Spacious 2 BHK Independent House with Garden" required />
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Property Type</label>
+              <select id="propType" class="form-control" required>
+                <option value="House">Independent House</option>
+                <option value="Flat">Flat</option>
+                <option value="Apartment">Apartment</option>
+                <option value="Villa">Villa</option>
+                <option value="Independent Floor">Builder Floor</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">BHK Config</label>
+              <select id="propBhk" class="form-control" required>
+                <option value="1 BHK">1 BHK</option>
+                <option value="2 BHK" selected>2 BHK</option>
+                <option value="3 BHK">3 BHK</option>
+                <option value="4 BHK">4 BHK</option>
+                <option value="5+ BHK">5+ BHK</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Area (Sq. Ft.)</label>
+              <input type="number" id="propArea" class="form-control" placeholder="1100" min="50" required />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Monthly Rent (₹)</label>
+              <input type="number" id="propRent" class="form-control" placeholder="8500" min="500" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Security Deposit (₹)</label>
+              <input type="number" id="propDeposit" class="form-control" placeholder="15000" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Maintenance /mo (₹)</label>
+              <input type="number" id="propMaintenance" class="form-control" placeholder="500" value="0" />
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Furnishing Status</label>
+              <select id="propFurnishing" class="form-control" required>
+                <option value="Semi Furnished">Semi Furnished</option>
+                <option value="Fully Furnished">Fully Furnished</option>
+                <option value="Unfurnished">Unfurnished</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Bathrooms</label>
+              <input type="number" id="propBathrooms" class="form-control" value="2" min="1" max="10" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Parking Availability</label>
+              <select id="propParking" class="form-control">
+                <option value="Car">Car Parking</option>
+                <option value="Bike">Two Wheeler Only</option>
+                <option value="Both">Both Car & Bike</option>
+                <option value="Covered">Covered Basement</option>
+                <option value="None">None</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
+            <div class="form-group">
+              <label class="form-label">Preferred Tenant</label>
+              <select id="propTenant" class="form-control">
+                <option value="Anyone">Anyone</option>
+                <option value="Family">Family Preferred</option>
+                <option value="Bachelor">Bachelors</option>
+                <option value="Students">Students</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Availability</label>
+              <select id="propAvailability" class="form-control">
+                <option value="Immediate">Immediate Move-in</option>
+                <option value="Available Soon">Available Soon</option>
+                <option value="Within 15 Days">Within 15 Days</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div style="border-top:1px solid var(--border-light); padding-top:16px; margin-top:8px;">
+            <h4 style="font-size:0.95rem; font-weight:700; margin-bottom:12px; color:var(--navy-900);">Location Details</h4>
+            <div class="form-group">
+              <label class="form-label">Complete Street Address</label>
+              <input type="text" id="propAddress" class="form-control" placeholder="House #14, Sharda Barrage Road" required />
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 2fr 1fr; gap:12px;">
+              <div class="form-group">
+                <label class="form-label">Locality / Colony</label>
+                <input type="text" id="propLocality" class="form-control" placeholder="Sharda Barrage Road" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">City</label>
+                <input type="text" id="propCity" class="form-control" placeholder="Tanakpur" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">PIN Code</label>
+                <input type="text" id="propPincode" class="form-control" placeholder="262309" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Amenities -->
+          <div class="form-group">
+            <label class="form-label">Select Included Amenities</label>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;">
+              <label class="checkbox-item"><input type="checkbox" name="newPropAmenity" value="Water Supply" checked /> 24x7 Water</label>
+              <label class="checkbox-item"><input type="checkbox" name="newPropAmenity" value="Power Backup" checked /> Power Backup</label>
+              <label class="checkbox-item"><input type="checkbox" name="newPropAmenity" value="Security" checked /> Security</label>
+              <label class="checkbox-item"><input type="checkbox" name="newPropAmenity" value="Wi-Fi" checked /> High-Speed Wi-Fi</label>
+              <label class="checkbox-item"><input type="checkbox" name="newPropAmenity" value="Lift" /> Elevator / Lift</label>
+              <label class="checkbox-item"><input type="checkbox" name="newPropAmenity" value="Gym" /> Fitness Gym</label>
+            </div>
+          </div>
+
+          <!-- Photo URL -->
+          <div class="form-group">
+            <label class="form-label">High-Resolution Property Photo URL</label>
+            <input type="url" id="propPhotoUrl" class="form-control" placeholder="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=1200" />
+            <small style="color:var(--text-muted);">Leave empty to use high-quality default architectural photography</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Property Description</label>
+            <textarea id="propDesc" class="form-control" rows="3" placeholder="Describe ventilation, floor, nearby landmarks, schools, and markets..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish Property Listing</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. RAZORPAY PAYMENT TEST CHECKOUT MODAL -->
+  <div class="modal-overlay" id="paymentCheckoutModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Complete Subscription Payment</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="paymentCheckoutDetails">
+        <!-- Rendered by seller-dashboard.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. REPORT LISTING MODAL -->
+  <div class="modal-overlay" id="reportModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Report Fraud or Misleading Listing</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="reportForm">
+        <div class="modal-body">
+          <input type="hidden" id="reportPropertyId" />
+          <div class="form-group">
+            <label class="form-label">Select Report Reason</label>
+            <select id="reportReasonSelect" class="form-control" required>
+              <option value="Fake or misleading listing">Fake or misleading listing</option>
+              <option value="Property already rented out">Property already rented out</option>
+              <option value="Incorrect pricing or extra hidden fees">Incorrect pricing or extra hidden fees</option>
+              <option value="Unreachable / unresponsive owner">Unreachable / unresponsive owner</option>
+              <option value="Inappropriate content or spam">Inappropriate content or spam</option>
+              <option value="Other">Other Reason</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Additional Investigation Details</label>
+            <textarea id="reportDetails" class="form-control" rows="3" placeholder="Provide extra context to help our Trust & Safety team verify this issue..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background:#EF4444; border-color:#EF4444;">Submit Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notifications -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Leaflet Maps Script -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Rentora Master ES Module -->
+  <script type="module" src="/js/app.js"></script>
+
+</body>
+</html>
