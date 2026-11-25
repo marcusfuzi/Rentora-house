@@ -592,6 +592,53 @@ window.openAddPropertyModal = function () {
   if (modal) modal.classList.add('active');
 };
 
+// Auto-fill Demo Property helper
+window.autoFillDemoProperty = function () {
+  const title = document.getElementById('propTitle');
+  const type = document.getElementById('propType');
+  const bhk = document.getElementById('propBhk');
+  const area = document.getElementById('propArea');
+  const rent = document.getElementById('propRent');
+  const deposit = document.getElementById('propDeposit');
+  const maint = document.getElementById('propMaintenance');
+  const furn = document.getElementById('propFurnishing');
+  const baths = document.getElementById('propBathrooms');
+  const park = document.getElementById('propParking');
+  const tenant = document.getElementById('propTenant');
+  const avail = document.getElementById('propAvailability');
+  const addr = document.getElementById('propAddress');
+  const loc = document.getElementById('propLocality');
+  const city = document.getElementById('propCity');
+  const pin = document.getElementById('propPincode');
+  const photo = document.getElementById('propPhotoUrl');
+  const desc = document.getElementById('propDesc');
+
+  if (title) title.value = 'Himalayan Breeze 3 BHK House with Garden & Terrace';
+  if (type) type.value = 'House';
+  if (bhk) bhk.value = '3 BHK';
+  if (area) area.value = '1550';
+  if (rent) rent.value = '11500';
+  if (deposit) deposit.value = '23000';
+  if (maint) maint.value = '500';
+  if (furn) furn.value = 'Semi Furnished';
+  if (baths) baths.value = '2';
+  if (park) park.value = 'Car';
+  if (tenant) tenant.value = 'Family';
+  if (avail) avail.value = 'Immediate';
+  if (addr) addr.value = 'House #22, Riverside Road, Near Sharda Viewpoint';
+  if (loc) loc.value = 'Sharda Nagar';
+  if (city) city.value = 'Tanakpur';
+  if (pin) pin.value = '262309';
+  if (photo) photo.value = 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?q=80&w=1200';
+  if (desc) desc.value = 'Beautiful independent 3 BHK home situated in a peaceful residential pocket of Tanakpur. Features scenic mountain views from private terrace, front lawn garden, 24x7 natural spring water supply, modular kitchen, and private car parking. 5 minutes away from main market.';
+
+  document.querySelectorAll('input[name="newPropAmenity"]').forEach((chk) => {
+    chk.checked = ['Water Supply', 'Power Backup', 'Security', 'Wi-Fi'].includes(chk.value);
+  });
+
+  showToast('Form pre-filled with Tanakpur sample property!', 'info');
+};
+
 // Razorpay Modal Checkout Workflow
 window.startRazorpayCheckout = async function (planKey, amountINR) {
   try {
