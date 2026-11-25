@@ -15,6 +15,22 @@ export async function renderSellerDashboard() {
   container.innerHTML = `
     <div class="dashboard-container">
       <div class="container">
+        <!-- Dashboard Top Breadcrumb Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <a href="#/" class="btn btn-sm btn-ghost" style="color:var(--navy-700); font-weight:700;">
+            ← Back to Marketplace / Home
+          </a>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.8rem; color:var(--text-muted);">Quick Switch Role:</span>
+            <button class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="window.triggerDemoLogin('customer')">
+              Switch to Tenant (Customer)
+            </button>
+            <button class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="window.triggerDemoLogin('admin')">
+              Switch to Admin
+            </button>
+          </div>
+        </div>
+
         <!-- Seller Dashboard Header -->
         <div class="dashboard-header">
           <div class="dashboard-header-pattern"></div>
@@ -27,12 +43,15 @@ export async function renderSellerDashboard() {
               <p>Active Subscription: <strong style="color:var(--coral-500); text-transform:uppercase;">${user.subscription?.plan || 'Free'} Plan</strong> • ${user.phone || user.email}</p>
             </div>
           </div>
-          <div style="display:flex; gap:12px; align-items:center;">
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="window.openAddPropertyModal()">
               ➕ List New Property
             </button>
             <button class="btn btn-outline" style="color:#FFFFFF; border-color:rgba(255,255,255,0.3);" onclick="window.switchSellerTab('subscription')">
               ⭐ Manage Subscription
+            </button>
+            <button onclick="window.logoutUser()" class="btn btn-sm" style="background:#FEE2E2; color:#DC2626; border:1px solid #FECACA; font-weight:700; padding:8px 16px;">
+              🚪 Logout
             </button>
           </div>
         </div>
@@ -93,7 +112,27 @@ export async function renderSellerDashboard() {
     </div>
   `;
 
+  // Preload secondary counts in background
+  preloadSellerCounts();
+
+  // Load default listings
   loadSellerListings();
+}
+
+async function preloadSellerCounts() {
+  try {
+    const [enqRes, visRes] = await Promise.all([
+      RentoraAPI.getSellerEnquiries().catch(() => ({ data: [] })),
+      RentoraAPI.getSellerVisits().catch(() => ({ data: [] })),
+    ]);
+
+    const enqBadge = document.getElementById('sellerEnquiriesCount');
+    const visBadge = document.getElementById('sellerVisitsCount');
+    if (enqBadge) enqBadge.textContent = enqRes.data?.length || 0;
+    if (visBadge) visBadge.textContent = visRes.data?.length || 0;
+  } catch (err) {
+    // Ignore
+  }
 }
 
 window.switchSellerTab = function (tabName) {
@@ -121,11 +160,17 @@ async function loadSellerListings() {
     const properties = res.data || [];
 
     // Update metrics
-    document.getElementById('metricTotalProps').textContent = stats.totalListings || 0;
-    document.getElementById('metricActiveProps').textContent = stats.activeListings || 0;
-    document.getElementById('metricTotalViews').textContent = stats.totalViews || 0;
-    document.getElementById('metricTotalEnquiries').textContent = stats.totalEnquiries || 0;
-    document.getElementById('sellerListingsCount').textContent = properties.length;
+    const metricTotalProps = document.getElementById('metricTotalProps');
+    const metricActiveProps = document.getElementById('metricActiveProps');
+    const metricTotalViews = document.getElementById('metricTotalViews');
+    const metricTotalEnquiries = document.getElementById('metricTotalEnquiries');
+    const listingsCountBadge = document.getElementById('sellerListingsCount');
+
+    if (metricTotalProps) metricTotalProps.textContent = stats.totalListings || 0;
+    if (metricActiveProps) metricActiveProps.textContent = stats.activeListings || 0;
+    if (metricTotalViews) metricTotalViews.textContent = stats.totalViews || 0;
+    if (metricTotalEnquiries) metricTotalEnquiries.textContent = stats.totalEnquiries || 0;
+    if (listingsCountBadge) listingsCountBadge.textContent = properties.length;
 
     if (properties.length === 0) {
       content.innerHTML = `
@@ -222,7 +267,8 @@ async function loadSellerEnquiries() {
   try {
     const res = await RentoraAPI.getSellerEnquiries();
     const enquiries = res.data || [];
-    document.getElementById('sellerEnquiriesCount').textContent = enquiries.length;
+    const enqBadge = document.getElementById('sellerEnquiriesCount');
+    if (enqBadge) enqBadge.textContent = enquiries.length;
 
     if (enquiries.length === 0) {
       content.innerHTML = `
@@ -303,7 +349,8 @@ async function loadSellerVisits() {
   try {
     const res = await RentoraAPI.getSellerVisits();
     const visits = res.data || [];
-    document.getElementById('sellerVisitsCount').textContent = visits.length;
+    const visBadge = document.getElementById('sellerVisitsCount');
+    if (visBadge) visBadge.textContent = visits.length;
 
     if (visits.length === 0) {
       content.innerHTML = `

@@ -44,6 +44,9 @@
         <button class="demo-chip-btn" style="background:rgba(239,68,68,0.25); border-color:#EF4444;" onclick="window.triggerDemoLogin('admin')">
           🛡️ Admin Console
         </button>
+        <button class="demo-chip-btn" style="background:#FEE2E2; border-color:#FECACA; color:#DC2626; font-weight:800;" onclick="window.logoutUser()">
+          🚪 Logout
+        </button>
       </div>
     </div>
   </div>
@@ -66,7 +69,8 @@
       <!-- Navigation Links -->
       <nav>
         <ul class="nav-links">
-          <li><a href="#/" class="nav-link active">Properties</a></li>
+          <li><a href="#/" class="nav-link active" id="navHomeLink">Properties</a></li>
+          <li><a href="javascript:void(0)" onclick="window.navigateToDashboard()" class="nav-link" id="navDashboardLink">Dashboard</a></li>
           <li><a href="#howItWorksSection" class="nav-link">How it Works</a></li>
           <li><a href="#pricingSection" class="nav-link">Landlord Plans</a></li>
         </ul>

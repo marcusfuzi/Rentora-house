@@ -14,6 +14,22 @@ export async function renderCustomerDashboard() {
   container.innerHTML = `
     <div class="dashboard-container">
       <div class="container">
+        <!-- Dashboard Top Breadcrumb Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <a href="#/" class="btn btn-sm btn-ghost" style="color:var(--navy-700); font-weight:700;">
+            ← Back to Marketplace / Home
+          </a>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.8rem; color:var(--text-muted);">Quick Switch Role:</span>
+            <button class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="window.triggerDemoLogin('seller')">
+              Switch to Landlord (Pro)
+            </button>
+            <button class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="window.triggerDemoLogin('admin')">
+              Switch to Admin
+            </button>
+          </div>
+        </div>
+
         <!-- Dashboard Header -->
         <div class="dashboard-header">
           <div class="dashboard-header-pattern"></div>
@@ -26,27 +42,30 @@ export async function renderCustomerDashboard() {
               <p>Tenant & Customer Portal • ${user.email} • ${user.phone || 'No phone added'}</p>
             </div>
           </div>
-          <div>
-            <span class="badge badge-success" style="font-size:0.8rem; padding:6px 14px;">Verified Tenant Account</span>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <span class="badge badge-success" style="font-size:0.8rem; padding:6px 14px;">Verified Tenant</span>
+            <button onclick="window.logoutUser()" class="btn btn-sm" style="background:#FEE2E2; color:#DC2626; border:1px solid #FECACA; font-weight:700; padding:8px 16px;">
+              🚪 Logout
+            </button>
           </div>
         </div>
 
         <!-- Navigation Tabs -->
         <div class="dashboard-tabs-bar">
-          <button class="dash-tab-btn active" data-tab="saved">
+          <button class="dash-tab-btn active" data-tab="saved" onclick="window.switchCustomerTab('saved')">
             ❤️ Saved Favourites (<span id="favCountBadge">0</span>)
           </button>
-          <button class="dash-tab-btn" data-tab="enquiries">
+          <button class="dash-tab-btn" data-tab="enquiries" onclick="window.switchCustomerTab('enquiries')">
             ✉️ My Enquiries (<span id="enquiryCountBadge">0</span>)
           </button>
-          <button class="dash-tab-btn" data-tab="visits">
+          <button class="dash-tab-btn" data-tab="visits" onclick="window.switchCustomerTab('visits')">
             📅 Scheduled Visits (<span id="visitCountBadge">0</span>)
           </button>
-          <button class="dash-tab-btn" data-tab="notifications">
+          <button class="dash-tab-btn" data-tab="notifications" onclick="window.switchCustomerTab('notifications')">
             🔔 Notifications
           </button>
-          <button class="dash-tab-btn" data-tab="profile">
-            ⚙️ Profile Settings
+          <button class="dash-tab-btn" data-tab="profile" onclick="window.switchCustomerTab('profile')">
+            ⚙️ Profile & Settings
           </button>
         </div>
 
@@ -58,19 +77,38 @@ export async function renderCustomerDashboard() {
     </div>
   `;
 
-  // Bind tab switching
-  const tabBtns = container.querySelectorAll('.dash-tab-btn');
-  tabBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadCustomerTab(btn.dataset.tab);
-    });
-  });
+  // Fetch counts in background so badges immediately show
+  preloadCustomerCounts();
 
   // Default tab: saved
   loadCustomerTab('saved');
 }
+
+async function preloadCustomerCounts() {
+  try {
+    const [favsRes, enqRes, visitsRes] = await Promise.all([
+      RentoraAPI.getFavourites().catch(() => ({ data: [] })),
+      RentoraAPI.getCustomerEnquiries().catch(() => ({ data: [] })),
+      RentoraAPI.getCustomerVisits().catch(() => ({ data: [] })),
+    ]);
+
+    const favBadge = document.getElementById('favCountBadge');
+    const enqBadge = document.getElementById('enquiryCountBadge');
+    const visBadge = document.getElementById('visitCountBadge');
+
+    if (favBadge) favBadge.textContent = favsRes.data?.length || 0;
+    if (enqBadge) enqBadge.textContent = enqRes.data?.length || 0;
+    if (visBadge) visBadge.textContent = visitsRes.data?.length || 0;
+  } catch (err) {
+    // Ignore silent count error
+  }
+}
+
+window.switchCustomerTab = function (tabName) {
+  const tabBtns = document.querySelectorAll('.dash-tab-btn');
+  tabBtns.forEach((b) => b.classList.toggle('active', b.dataset.tab === tabName));
+  loadCustomerTab(tabName);
+};
 
 async function loadCustomerTab(tabName) {
   const content = document.getElementById('customerTabContent');
@@ -81,7 +119,8 @@ async function loadCustomerTab(tabName) {
     try {
       const res = await RentoraAPI.getFavourites();
       const favs = res.data || [];
-      document.getElementById('favCountBadge').textContent = favs.length;
+      const badge = document.getElementById('favCountBadge');
+      if (badge) badge.textContent = favs.length;
 
       if (favs.length === 0) {
         content.innerHTML = `
@@ -105,7 +144,7 @@ async function loadCustomerTab(tabName) {
                     ${p.isSponsored ? '<span class="badge badge-sponsored">⭐ Sponsored</span>' : ''}
                     <span class="badge badge-navy">${p.propertyType}</span>
                   </div>
-                  <button class="card-fav-btn active" title="Remove" onclick="window.removeFavoriteFromList('${p._id}')">
+                  <button class="card-fav-btn active" title="Remove from saved" onclick="window.removeFavoriteFromList('${p._id}')">
                     <svg viewBox="0 0 24 24" stroke-width="2" style="fill:#EF4444; stroke:#EF4444;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                   </button>
                 </div>
@@ -136,7 +175,8 @@ async function loadCustomerTab(tabName) {
     try {
       const res = await RentoraAPI.getCustomerEnquiries();
       const enquiries = res.data || [];
-      document.getElementById('enquiryCountBadge').textContent = enquiries.length;
+      const badge = document.getElementById('enquiryCountBadge');
+      if (badge) badge.textContent = enquiries.length;
 
       if (enquiries.length === 0) {
         content.innerHTML = `
@@ -184,7 +224,7 @@ async function loadCustomerTab(tabName) {
                       <td>${new Date(e.moveInDate).toLocaleDateString()}</td>
                       <td>${statusBadge}</td>
                       <td>
-                        <em style="color:${e.sellerResponse ? 'var(--navy-900)' : 'var(--text-muted)'};">
+                        <em style="color:${e.sellerResponse ? 'var(--navy-900)' : 'var(--text-muted)'}; font-weight:${e.sellerResponse ? '600' : '400'};">
                           ${e.sellerResponse || 'Awaiting response...'}
                         </em>
                       </td>
@@ -210,7 +250,8 @@ async function loadCustomerTab(tabName) {
     try {
       const res = await RentoraAPI.getCustomerVisits();
       const visits = res.data || [];
-      document.getElementById('visitCountBadge').textContent = visits.length;
+      const badge = document.getElementById('visitCountBadge');
+      if (badge) badge.textContent = visits.length;
 
       if (visits.length === 0) {
         content.innerHTML = `
@@ -218,6 +259,7 @@ async function loadCustomerTab(tabName) {
             <div class="empty-state-icon">📅</div>
             <h3 class="empty-state-title">No visits scheduled</h3>
             <p class="empty-state-desc">You can book in-person or video visits directly with verified landlords from any property page.</p>
+            <a href="#/" class="btn btn-primary">Discover Homes & Book Tours</a>
           </div>
         `;
       } else {
@@ -303,7 +345,7 @@ async function loadCustomerTab(tabName) {
   } else if (tabName === 'profile') {
     const user = getCurrentUser();
     content.innerHTML = `
-      <div style="max-width:600px; background:#FFFFFF; border-radius:var(--radius-lg); border:1px solid var(--border-light); padding:28px;">
+      <div style="max-width:640px; background:#FFFFFF; border-radius:var(--radius-lg); border:1px solid var(--border-light); padding:28px;">
         <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:20px;">Account & Personal Details</h3>
         <form id="customerProfileForm">
           <div class="form-group">
@@ -318,7 +360,12 @@ async function loadCustomerTab(tabName) {
             <label class="form-label">Phone Number</label>
             <input type="text" id="custProfilePhone" class="form-control" value="${user?.phone || ''}" placeholder="+91 XXXXX XXXXX" />
           </div>
-          <button type="submit" class="btn btn-primary" style="margin-top:10px;">Save Profile Updates</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; padding-top:16px; border-top:1px solid var(--border-light);">
+            <button type="submit" class="btn btn-primary">Save Profile Updates</button>
+            <button type="button" onclick="window.logoutUser()" class="btn btn-sm" style="background:#FEE2E2; color:#DC2626; border:1px solid #FECACA; font-weight:700;">
+              🚪 Logout from Rentora
+            </button>
+          </div>
         </form>
       </div>
     `;

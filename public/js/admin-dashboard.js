@@ -15,6 +15,22 @@ export async function renderAdminDashboard() {
   container.innerHTML = `
     <div class="dashboard-container">
       <div class="container">
+        <!-- Dashboard Top Breadcrumb Bar -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <a href="#/" class="btn btn-sm btn-ghost" style="color:var(--navy-700); font-weight:700;">
+            ← Back to Marketplace / Home
+          </a>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.8rem; color:var(--text-muted);">Quick Switch Role:</span>
+            <button class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="window.triggerDemoLogin('seller')">
+              Switch to Landlord (Pro)
+            </button>
+            <button class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:4px 10px;" onclick="window.triggerDemoLogin('customer')">
+              Switch to Tenant
+            </button>
+          </div>
+        </div>
+
         <!-- Admin Dashboard Header -->
         <div class="dashboard-header" style="background: linear-gradient(135deg, #070d18 0%, #152A4A 100%);">
           <div class="dashboard-header-pattern"></div>
@@ -27,10 +43,13 @@ export async function renderAdminDashboard() {
               <p>Platform Command Center • Logged in as ${user.email}</p>
             </div>
           </div>
-          <div>
+          <div style="display:flex; gap:10px; align-items:center;">
             <span class="badge badge-navy" style="background:rgba(255,255,255,0.15); color:#FFFFFF; font-size:0.85rem; padding:8px 16px;">
               SUPER ADMIN CONSOLE
             </span>
+            <button onclick="window.logoutUser()" class="btn btn-sm" style="background:#FEE2E2; color:#DC2626; border:1px solid #FECACA; font-weight:700; padding:8px 16px;">
+              🚪 Logout
+            </button>
           </div>
         </div>
 
@@ -98,10 +117,15 @@ async function loadAdminMetrics() {
   try {
     const res = await RentoraAPI.getAdminMetrics();
     const data = res.data;
-    document.getElementById('admMetricUsers').textContent = data.users.total;
-    document.getElementById('admMetricProps').textContent = data.properties.active;
-    document.getElementById('admMetricRevenue').textContent = formatINR(data.business.totalRevenue);
-    document.getElementById('admMetricReports').textContent = data.business.pendingReports;
+    const usersEl = document.getElementById('admMetricUsers');
+    const propsEl = document.getElementById('admMetricProps');
+    const revEl = document.getElementById('admMetricRevenue');
+    const repEl = document.getElementById('admMetricReports');
+
+    if (usersEl) usersEl.textContent = data.users.total;
+    if (propsEl) propsEl.textContent = data.properties.active;
+    if (revEl) revEl.textContent = formatINR(data.business.totalRevenue);
+    if (repEl) repEl.textContent = data.business.pendingReports;
   } catch (err) {
     console.error('Failed to load admin metrics:', err);
   }

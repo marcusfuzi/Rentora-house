@@ -19,6 +19,9 @@ export async function loginUser(email, password, role) {
 
     showToast(`Welcome back, ${res.user.name}!`);
     updateAuthUI();
+
+    // Auto-navigate to user's dashboard
+    navigateToDashboard();
     return res.user;
   } catch (error) {
     showToast(error.message, 'danger');
@@ -35,6 +38,9 @@ export async function registerUser(userData) {
 
     showToast(`Account created! Welcome to Rentora, ${res.user.name}!`);
     updateAuthUI();
+
+    // Auto-navigate to dashboard
+    navigateToDashboard();
     return res.user;
   } catch (error) {
     showToast(error.message, 'danger');
@@ -47,11 +53,35 @@ export function logoutUser() {
   RentoraAPI.setUser(null);
   currentUser = null;
 
-  showToast('You have been logged out.');
+  showToast('You have been logged out successfully.', 'info');
   updateAuthUI();
   window.location.hash = '#/';
   window.dispatchEvent(new CustomEvent('rentora:auth-change'));
 }
+
+// Make logoutUser globally accessible
+window.logoutUser = logoutUser;
+
+export function navigateToDashboard() {
+  if (!isLoggedIn() || !currentUser) {
+    showToast('Please sign in to view your dashboard', 'info');
+    if (typeof window.openAuthModal === 'function') {
+      window.openAuthModal('login');
+    }
+    return;
+  }
+
+  if (currentUser.role === 'admin') {
+    window.location.hash = '#/admin';
+  } else if (currentUser.role === 'seller') {
+    window.location.hash = '#/seller/dashboard';
+  } else {
+    window.location.hash = '#/customer/dashboard';
+  }
+}
+
+// Make navigateToDashboard globally accessible
+window.navigateToDashboard = navigateToDashboard;
 
 export async function quickDemoLogin(type) {
   const credentials = {
@@ -69,20 +99,29 @@ export async function quickDemoLogin(type) {
     window.dispatchEvent(new CustomEvent('rentora:auth-change', { detail: user }));
 
     // Route user to appropriate view
-    if (user.role === 'admin') {
-      window.location.hash = '#/admin';
-    } else if (user.role === 'seller') {
-      window.location.hash = '#/seller/dashboard';
+    const targetHash =
+      user.role === 'admin'
+        ? '#/admin'
+        : user.role === 'seller'
+        ? '#/seller/dashboard'
+        : '#/customer/dashboard';
+
+    if (window.location.hash === targetHash) {
+      window.dispatchEvent(new Event('hashchange'));
     } else {
-      window.location.hash = '#/customer/dashboard';
+      window.location.hash = targetHash;
     }
   } catch (err) {
     console.error('Demo login failed:', err);
   }
 }
 
+window.quickDemoLogin = quickDemoLogin;
+window.triggerDemoLogin = quickDemoLogin;
+
 export function updateAuthUI() {
   const navUserSection = document.getElementById('navUserSection');
+  const navDashboardLink = document.getElementById('navDashboardLink');
   if (!navUserSection) return;
 
   if (isLoggedIn() && currentUser) {
@@ -97,7 +136,7 @@ export function updateAuthUI() {
               ? 'badge-verified'
               : 'badge-navy'
           }" style="font-size:0.65rem">${(currentUser.subscription?.plan || 'Free').toUpperCase()} SELLER</span>`
-        : '<span class="badge badge-success" style="font-size:0.65rem">CUSTOMER</span>';
+        : '<span class="badge badge-success" style="font-size:0.65rem">TENANT</span>';
 
     const dashboardLink =
       currentUser.role === 'admin'
@@ -107,39 +146,39 @@ export function updateAuthUI() {
         : '#/customer/dashboard';
 
     navUserSection.innerHTML = `
-      <div class="nav-user-dropdown" style="display:flex; align-items:center; gap:10px;">
-        <a href="${dashboardLink}" class="user-profile-btn">
+      <div class="nav-user-dropdown" style="display:flex; align-items:center; gap:8px;">
+        <a href="${dashboardLink}" class="user-profile-btn" title="View Profile & Dashboard">
           <div class="user-avatar">${currentUser.name.charAt(0).toUpperCase()}</div>
           <div style="text-align:left; line-height:1.2;">
             <div style="font-size:0.85rem; font-weight:700;">${currentUser.name}</div>
             ${roleBadge}
           </div>
         </a>
-        <a href="${dashboardLink}" class="btn btn-sm btn-outline" title="Dashboard">
+        <a href="${dashboardLink}" class="btn btn-sm btn-navy" title="Open Dashboard">
           Dashboard
         </a>
-        <button id="logoutBtn" class="btn btn-sm btn-ghost" title="Logout" style="color:#EF4444;">
-          Logout
+        <button id="logoutBtn" onclick="window.logoutUser()" class="btn btn-sm" title="Log Out" style="background:#FEE2E2; color:#DC2626; border:1px solid #FECACA; font-weight:700;">
+          🚪 Logout
         </button>
       </div>
     `;
 
-    document.getElementById('logoutBtn')?.addEventListener('click', logoutUser);
+    if (navDashboardLink) {
+      navDashboardLink.style.display = 'inline-flex';
+      navDashboardLink.setAttribute('href', dashboardLink);
+    }
   } else {
     navUserSection.innerHTML = `
-      <button id="openLoginBtn" class="btn btn-ghost">
+      <button id="openLoginBtn" class="btn btn-ghost" onclick="window.openAuthModal('login')">
         Sign In
       </button>
-      <button id="openRegisterBtn" class="btn btn-primary">
+      <button id="openRegisterBtn" class="btn btn-primary" onclick="window.openAuthModal('register')">
         Get Started
       </button>
     `;
 
-    document.getElementById('openLoginBtn')?.addEventListener('click', () => {
-      window.openAuthModal('login');
-    });
-    document.getElementById('openRegisterBtn')?.addEventListener('click', () => {
-      window.openAuthModal('register');
-    });
+    if (navDashboardLink) {
+      navDashboardLink.setAttribute('href', 'javascript:void(0)');
+    }
   }
 }

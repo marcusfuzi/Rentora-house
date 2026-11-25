@@ -41,6 +41,8 @@ function handleRoute() {
   const heroSection = document.getElementById('heroSection');
   const howItWorksSection = document.getElementById('howItWorksSection');
   const pricingSection = document.getElementById('pricingSection');
+  const navHomeLink = document.getElementById('navHomeLink');
+  const navDashboardLink = document.getElementById('navDashboardLink');
 
   if (hash.startsWith('#/customer/dashboard')) {
     if (!isLoggedIn()) {
@@ -57,6 +59,9 @@ function handleRoute() {
       dashboardView.style.display = 'block';
       renderCustomerDashboard();
     }
+    if (navHomeLink) navHomeLink.classList.remove('active');
+    if (navDashboardLink) navDashboardLink.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (hash.startsWith('#/seller/dashboard')) {
     if (!isLoggedIn() || getCurrentUser()?.role !== 'seller') {
       showToast('Landlord clearance required. Please login with a seller account.', 'danger');
@@ -72,6 +77,9 @@ function handleRoute() {
       dashboardView.style.display = 'block';
       renderSellerDashboard();
     }
+    if (navHomeLink) navHomeLink.classList.remove('active');
+    if (navDashboardLink) navDashboardLink.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } else if (hash.startsWith('#/admin')) {
     if (!isLoggedIn() || getCurrentUser()?.role !== 'admin') {
       showToast('Super Admin clearance required', 'danger');
@@ -87,7 +95,10 @@ function handleRoute() {
       dashboardView.style.display = 'block';
       renderAdminDashboard();
     }
-  } else if (hash.startsWith('#/pricing')) {
+    if (navHomeLink) navHomeLink.classList.remove('active');
+    if (navDashboardLink) navDashboardLink.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (hash.startsWith('#/pricing') || hash === '#pricingSection') {
     if (dashboardView) dashboardView.style.display = 'none';
     if (heroSection) heroSection.style.display = 'none';
     if (mainView) mainView.style.display = 'none';
@@ -96,6 +107,8 @@ function handleRoute() {
       pricingSection.style.display = 'block';
       pricingSection.scrollIntoView({ behavior: 'smooth' });
     }
+    if (navHomeLink) navHomeLink.classList.remove('active');
+    if (navDashboardLink) navDashboardLink.classList.remove('active');
   } else {
     // Default: Home & Marketplace
     if (dashboardView) dashboardView.style.display = 'none';
@@ -103,6 +116,9 @@ function handleRoute() {
     if (mainView) mainView.style.display = 'block';
     if (howItWorksSection) howItWorksSection.style.display = 'block';
     if (pricingSection) pricingSection.style.display = 'block';
+
+    if (navHomeLink) navHomeLink.classList.add('active');
+    if (navDashboardLink) navDashboardLink.classList.remove('active');
 
     fetchAndRenderProperties();
   }
